@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+#
+# mabinogi-window — move the 마비노기 모바일 (Mabinogi Mobile) window between the
+# main monitor ("foreground") and the BetterDisplay virtual monitor ("background").
+#
+# Usage:
+#   mabinogi-window background   # move to the virtual monitor, keep it running off-screen
+#   mabinogi-window foreground   # move to the main monitor and focus it
+#   mabinogi-window status       # report which monitor the window is on
+#
+# Requires: Accessibility permission for the app that runs this (iTerm2 / Terminal).
+#   System Settings > Privacy & Security > Accessibility > enable your terminal.
+#
+set -euo pipefail
+
+APP_PROCESS_NAME="ProductName"        # iOS-on-Mac wrapper process name
+APP_BUNDLE_ID="com.nexon.devcat.mm"   # for reference; Mabinogi Mobile
+
+action="${1:-}"
+
+usage() { grep '^#' "$0" | sed 's/^# \{0,1\}//; 1d'; exit 1; }
+
+# --- Resolve live display bounds (logical points) via CoreGraphics. ---
+# Emits one line per display: "MAIN x y w h" or "SEC x y w h".
+display_bounds() {
+  swift - <<'SWIFT'
+import CoreGraphics
+var count: UInt32 = 0
+CGGetOnlineDisplayList(16, nil, &count)
+var ids = [CGDirectDisplayID](repeating: 0, count: Int(count))
+CGGetOnlineDisplayList(count, &ids, &count)
+let main = CGMainDisplayID()
+for id in ids {
+  let b = CGDisplayBounds(id)
+  let tag = (id == main) ? "MAIN" : "SEC"
+  print("\(tag) \(Int(b.origin.x)) \(Int(b.origin.y)) \(Int(b.size.width)) \(Int(b.size.height))")
+}
+SWIFT
+}
+
+# Pick a target display rectangle: "main" -> main monitor, "virtual" -> first secondary.
+pick_display() {
+  local which="$1" b
+  b="$(display_bounds)"
+  if [[ "$which" == "main" ]]; then
+    awk '$1=="MAIN"{print $2,$3,$4,$5; exit}' <<<"$b"
+  else
+    awk '$1=="SEC"{print $2,$3,$4,$5; exit}' <<<"$b"
+  fi
+}
+
+# Move + optionally focus the window, centered on the given display rect.
+move_window() {
+  local dx="$1" dy="$2" dw="$3" dh="$4" focus="$5" out
+  set +e
+  out="$(osascript - "$APP_PROCESS_NAME" "$dx" "$dy" "$dw" "$dh" "$focus" <<'APPLESCRIPT' 2>&1
+on run argv
+  set procName to item 1 of argv
+  set dx to (item 2 of argv) as integer
+  set dy to (item 3 of argv) as integer
+  set dw to (item 4 of argv) as integer
+  set dh to (item 5 of argv) as integer
+  set focusIt to (item 6 of argv) is "focus"
+  tell application "System Events"
+    if not (exists process procName) then error "Mabinogi is not running (process " & procName & " not found)."
+    set p to first process whose name is procName
+    set w to first window of p
+    set {ww, wh} to size of w
+    set nx to dx + ((dw - ww) div 2)
+    set ny to dy + ((dh - wh) div 2)
+    if ny < dy then set ny to dy
+    set position of w to {nx, ny}
+    if focusIt then set frontmost of p to true
+    return "moved to " & nx & "," & ny & " (window " & ww & "x" & wh & ")"
+  end tell
+end run
+APPLESCRIPT
+)"
+  local rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    if grep -q "assistive access\|-1719" <<<"$out"; then
+      echo "ERROR: Accessibility permission is not granted." >&2
+      echo "  Grant it: System Settings > Privacy & Security > Accessibility > enable your terminal (iTerm2)." >&2
+      echo "  Then re-run this command." >&2
+    else
+      echo "ERROR: $out" >&2
+    fi
+    exit $rc
+  fi
+  echo "$out"
+}
+
+# Report which monitor the window currently sits on.
+show_status() {
+  local out
+  set +e
+  out="$(osascript - "$APP_PROCESS_NAME" <<'APPLESCRIPT' 2>&1
+on run argv
+  set procName to item 1 of argv
+  tell application "System Events"
+    if not (exists process procName) then error "Mabinogi is not running."
+    set p to first process whose name is procName
+    set w to first window of p
+    set {px, py} to position of w
+    set {ww, wh} to size of w
+    return (px as text) & " " & (py as text) & " " & (ww as text) & " " & (wh as text)
+  end tell
+end run
+APPLESCRIPT
+)"
+  local rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    if grep -q "assistive access\|-1719" <<<"$out"; then
+      echo "ERROR: Accessibility permission is not granted (see 'mabinogi-window' header)." >&2
+    else
+      echo "ERROR: $out" >&2
+    fi
+    exit $rc
+  fi
+  read -r px py ww wh <<<"$out"
+  local cx=$((px + ww / 2))
+  # Which display contains the window centre?
+  local label="unknown" line tag x y w h
+  while read -r tag x y w h; do
+    if (( cx >= x && cx < x + w )); then
+      [[ "$tag" == "MAIN" ]] && label="main monitor (foreground)" || label="virtual monitor (background)"
+    fi
+  done < <(display_bounds)
+  echo "Mabinogi window at (${px},${py}) size ${ww}x${wh} -> ${label}"
+}
+
+case "$action" in
+  background|bg)
+    read -r x y w h <<<"$(pick_display virtual)"
+    [[ -z "${x:-}" ]] && { echo "ERROR: no virtual/secondary monitor found. Is the BetterDisplay virtual screen enabled?" >&2; exit 1; }
+    move_window "$x" "$y" "$w" "$h" nofocus
+    ;;
+  foreground|fg)
+    read -r x y w h <<<"$(pick_display main)"
+    move_window "$x" "$y" "$w" "$h" focus
+    ;;
+  status|st)
+    show_status
+    ;;
+  *)
+    usage
+    ;;
+esac
