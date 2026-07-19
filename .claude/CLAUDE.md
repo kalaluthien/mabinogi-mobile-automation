@@ -4,17 +4,10 @@ Move the **마비노기 모바일** (Mabinogi Mobile) window between the physica
 monitor and a BetterDisplay virtual monitor on this Mac, so the game keeps
 running off-screen when not in use.
 
-## Signals — what the user says, what you do
-
-| User says (either language)                    | Action                                                        |
-| ---------------------------------------------- | ------------------------------------------------------------- |
-| "마비노기 background" / "mabinogi background"  | `scripts/mabinogi-window background` — move window to the **virtual** monitor, no focus |
-| "마비노기 foreground" / "mabinogi foreground"  | `scripts/mabinogi-window foreground` — move window to the **main** monitor and focus it |
-| "마비노기 status" / "where is mabinogi"        | `scripts/mabinogi-window status` — report which monitor it is on  |
-
-**background** = park the game on the virtual monitor (out of sight, still
-rendering/running). **foreground** = bring it back to the main screen to play.
-Run the script; do not re-derive the mechanism each time.
+The user-facing actions ("마비노기 background / foreground / status") are the
+`background`, `foreground`, and `status` skills under `.claude/skills/`; each
+runs the matching `scripts/mabinogi-window` subcommand. This file holds the
+environment, prerequisites, and mechanism those skills rely on.
 
 ## Environment (verify before relying on it — displays/IDs change on reconnect)
 
