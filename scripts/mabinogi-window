@@ -8,11 +8,12 @@
 #   mabinogi-window foreground   # move to the main monitor and focus it
 #   mabinogi-window background   # park it on the virtual monitor (no focus)
 #   mabinogi-window toggle       # flip to the other monitor based on current location
-#   mabinogi-window screenshot   # capture the monitor the window is on, open in Preview (no move)
+#   mabinogi-window screenshot   # capture just the game window, open in Preview (no move)
 #
 # The moves are idempotent: foreground/background do nothing (beyond re-focusing
 # for foreground) when the window is already on the target monitor. screenshot
-# never moves or focuses the window.
+# captures only the app window (by window id) — no desktop — and never moves or
+# focuses it, so it works even while the window is parked off-screen.
 #
 # Requires: Accessibility permission for the app that runs this (iTerm2 / Terminal).
 #   System Settings > Privacy & Security > Accessibility > enable your terminal.
@@ -206,25 +207,47 @@ do_status() {
   echo "Mabinogi window at (${FRAME_PX},${FRAME_PY}) size ${FRAME_W}x${FRAME_H} -> ${label}"
 }
 
-# Capture the monitor the window currently sits on and open it in Preview.
-# Read-only: never moves or focuses the window. Uses region capture (-R) keyed to
-# the live display bounds, so it works for the off-screen virtual monitor too.
+# CGWindowID of the app's main window (largest layer-0 window it owns). Matched by
+# PID, because the window-server owner name is the localized app title
+# (마비노기 모바일), not the System Events process name (ProductName). Empty on miss.
+window_id() {
+  local pid
+  pid="$(pgrep -x "$APP_PROCESS_NAME" | head -1)"
+  [[ -z "$pid" ]] && return 1
+  swift - "$pid" <<'SWIFT'
+import CoreGraphics
+import Foundation
+let pid = Int(CommandLine.arguments[1]) ?? -1
+guard let list = CGWindowListCopyWindowInfo([], kCGNullWindowID) as? [[String: Any]] else { exit(1) }
+var bestID = 0, bestArea = -1.0
+for w in list {
+  guard (w[kCGWindowOwnerPID as String] as? Int) == pid,
+        (w[kCGWindowLayer as String] as? Int) == 0,
+        let id = w[kCGWindowNumber as String] as? Int,
+        let b = w[kCGWindowBounds as String] as? [String: Double] else { continue }
+  let area = (b["Width"] ?? 0) * (b["Height"] ?? 0)   // largest owned window = the game, not the 1920x30 strips
+  if area > bestArea { bestArea = area; bestID = id }
+}
+if bestID != 0 { print(bestID) } else { exit(2) }
+SWIFT
+}
+
+# Capture only the Mabinogi window (by window id, no desktop, no shadow) and open
+# it in Preview. Read-only: never moves or focuses the window, and works whichever
+# monitor it is on — including the off-screen virtual one.
 do_screenshot() {
-  load_window_frame
-  local loc x y w h
+  load_window_frame                                  # for the location label + a clear error if not running
+  local loc wid
   loc="$(window_location)"
-  case "$loc" in
-    foreground) read -r x y w h <<<"$(pick_display main)" ;;
-    background) read -r x y w h <<<"$(pick_display virtual)" ;;
-    *)          die "window is off-screen/unknown; move it to a monitor first." ;;
-  esac
+  wid="$(window_id)" || die "could not find the Mabinogi window."
+  [[ -z "$wid" ]] && die "could not find the Mabinogi window."
   local shot_dir out
   shot_dir="${TMPDIR:-/tmp}/mabinogi-window"
   mkdir -p "$shot_dir"
-  out="${shot_dir}/${loc}.png"                       # fixed path per location: overwritten, never accumulates
-  screencapture -x -R"${x},${y},${w},${h}" "$out" || die "screencapture failed."
+  out="${shot_dir}/mabinogi.png"                     # fixed path: overwritten each run, never accumulates
+  screencapture -x -o -l "$wid" "$out" || die "screencapture failed."
   open "$out"
-  echo "captured ${loc} monitor (${x},${y} ${w}x${h}) -> ${out} (opened in Preview)"
+  echo "captured Mabinogi window (id ${wid}, currently ${loc}) -> ${out} (opened in Preview)"
 }
 
 # Flip the window to the other monitor based on where it is now.
