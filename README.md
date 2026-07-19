@@ -90,14 +90,16 @@ generated from it, not hand-written. After changing the table, regenerate:
 scripts/mabinogi-window __complete >| completions/_mabinogi-window
 ```
 
-Enable the guard once per clone so a stale completion can never be committed:
+Enable the guard once per clone so a stale completion can never be committed
+(needs [pre-commit](https://pre-commit.com): `brew install pre-commit`):
 
 ```sh
-git config core.hooksPath .githooks
+pre-commit install
 ```
 
-`.githooks/pre-commit` regenerates the completion and fails the commit if it
-differs from what is staged — no drift, no magic.
+The `mabinogi-completion-sync` hook (`.pre-commit-config.yaml` →
+`scripts/check-completion-sync`) regenerates the completion and fails the commit
+if it differs from what is staged — no drift, no magic.
 
 In Claude Code, `.claude/CLAUDE.md` routes window requests ("where is mabinogi",
 "park it", "bring it back", "show mabinogi") straight to this script and

@@ -1,0 +1,11 @@
+# Enable once per clone:  pre-commit install
+# Keeps completions/_mabinogi-window in sync with scripts/mabinogi-window.
+repos:
+  - repo: local
+    hooks:
+      - id: mabinogi-completion-sync
+        name: completion in sync with script
+        entry: scripts/check-completion-sync
+        language: script
+        pass_filenames: false
+        files: '^(scripts/mabinogi-window|completions/_mabinogi-window)$'
