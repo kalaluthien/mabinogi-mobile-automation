@@ -21,8 +21,12 @@
 #
 set -euo pipefail
 
-APP_PROCESS_NAME="ProductName"        # iOS-on-Mac wrapper process name
-APP_BUNDLE_ID="com.nexon.devcat.mm"   # for reference; Mabinogi Mobile
+# Identify the app by BUNDLE ID, not process name. The wrapper process is named
+# "ProductName" — the default Xcode $(PRODUCT_NAME) placeholder Nexon shipped
+# unset — which is both unstable across updates and prone to collide with any
+# other sloppily-built iOS-on-Mac app. The bundle id is the stable, unique key.
+APP_BUNDLE_ID="com.nexon.devcat.mm"   # Mabinogi Mobile; the match key everywhere
+APP_LABEL="Mabinogi Mobile"           # human label for messages only
 
 action="${1:-}"
 
@@ -92,12 +96,12 @@ FRAME_PX= FRAME_PY= FRAME_W= FRAME_H=
 load_window_frame() {
   local out rc
   set +e
-  out="$(osascript - "$APP_PROCESS_NAME" <<'APPLESCRIPT' 2>&1
+  out="$(osascript - "$APP_BUNDLE_ID" <<'APPLESCRIPT' 2>&1
 on run argv
-  set procName to item 1 of argv
+  set bundleID to item 1 of argv
   tell application "System Events"
-    if not (exists process procName) then error "Mabinogi is not running (process " & procName & " not found)."
-    set p to first process whose name is procName
+    if not (exists (first process whose bundle identifier is bundleID)) then error "Mabinogi Mobile is not running (bundle " & bundleID & " not found)."
+    set p to first process whose bundle identifier is bundleID
     set w to first window of p
     set {px, py} to position of w
     set {ww, wh} to size of w
@@ -121,17 +125,17 @@ window_location() { locate_center $((FRAME_PX + FRAME_W / 2)); }
 move_window() {
   local dx="$1" dy="$2" dw="$3" dh="$4" focus="$5" out rc
   set +e
-  out="$(osascript - "$APP_PROCESS_NAME" "$dx" "$dy" "$dw" "$dh" "$focus" <<'APPLESCRIPT' 2>&1
+  out="$(osascript - "$APP_BUNDLE_ID" "$dx" "$dy" "$dw" "$dh" "$focus" <<'APPLESCRIPT' 2>&1
 on run argv
-  set procName to item 1 of argv
+  set bundleID to item 1 of argv
   set dx to (item 2 of argv) as integer
   set dy to (item 3 of argv) as integer
   set dw to (item 4 of argv) as integer
   set dh to (item 5 of argv) as integer
   set focusIt to (item 6 of argv) is "focus"
   tell application "System Events"
-    if not (exists process procName) then error "Mabinogi is not running (process " & procName & " not found)."
-    set p to first process whose name is procName
+    if not (exists (first process whose bundle identifier is bundleID)) then error "Mabinogi Mobile is not running (bundle " & bundleID & " not found)."
+    set p to first process whose bundle identifier is bundleID
     set w to first window of p
     set {ww, wh} to size of w
     set nx to dx + ((dw - ww) div 2)
@@ -155,12 +159,12 @@ APPLESCRIPT
 focus_window() {
   local out rc
   set +e
-  out="$(osascript - "$APP_PROCESS_NAME" <<'APPLESCRIPT' 2>&1
+  out="$(osascript - "$APP_BUNDLE_ID" <<'APPLESCRIPT' 2>&1
 on run argv
-  set procName to item 1 of argv
+  set bundleID to item 1 of argv
   tell application "System Events"
-    if not (exists process procName) then error "Mabinogi is not running (process " & procName & " not found)."
-    set frontmost of (first process whose name is procName) to true
+    if not (exists (first process whose bundle identifier is bundleID)) then error "Mabinogi Mobile is not running (bundle " & bundleID & " not found)."
+    set frontmost of (first process whose bundle identifier is bundleID) to true
   end tell
 end run
 APPLESCRIPT
@@ -210,10 +214,11 @@ do_status() {
 
 # CGWindowID of the app's main window (largest layer-0 window it owns). Matched by
 # PID, because the window-server owner name is the localized app title
-# (마비노기 모바일), not the System Events process name (ProductName). Empty on miss.
+# (마비노기 모바일) — not something we can match on. The PID comes from the bundle id
+# via lsappinfo, keeping the same stable key used everywhere else. Empty on miss.
 window_id() {
   local pid
-  pid="$(pgrep -x "$APP_PROCESS_NAME" | head -1)"
+  pid="$(lsappinfo info -only pid "$APP_BUNDLE_ID" 2>/dev/null | sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p')"
   [[ -z "$pid" ]] && return 1
   swift - "$pid" <<'SWIFT'
 import CoreGraphics
