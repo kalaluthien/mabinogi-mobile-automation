@@ -8,9 +8,9 @@ running off-screen when not in use.
 
 | User says (either language)                    | Action                                                        |
 | ---------------------------------------------- | ------------------------------------------------------------- |
-| "마비노기 background" / "mabinogi background"  | `bin/mabinogi-window background` — move window to the **virtual** monitor, no focus |
-| "마비노기 foreground" / "mabinogi foreground"  | `bin/mabinogi-window foreground` — move window to the **main** monitor and focus it |
-| "마비노기 status" / "where is mabinogi"        | `bin/mabinogi-window status` — report which monitor it is on  |
+| "마비노기 background" / "mabinogi background"  | `scripts/mabinogi-window background` — move window to the **virtual** monitor, no focus |
+| "마비노기 foreground" / "mabinogi foreground"  | `scripts/mabinogi-window foreground` — move window to the **main** monitor and focus it |
+| "마비노기 status" / "where is mabinogi"        | `scripts/mabinogi-window status` — report which monitor it is on  |
 
 **background** = park the game on the virtual monitor (out of sight, still
 rendering/running). **foreground** = bring it back to the main screen to play.

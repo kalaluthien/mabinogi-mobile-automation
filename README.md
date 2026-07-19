@@ -5,9 +5,9 @@ monitor when idle, and pull it back to the main monitor to play — one command
 each way.
 
 ```sh
-bin/mabinogi-window background   # -> virtual monitor (keep running off-screen)
-bin/mabinogi-window foreground   # -> main monitor, focused
-bin/mabinogi-window status       # which monitor is it on?
+scripts/mabinogi-window background   # -> virtual monitor (keep running off-screen)
+scripts/mabinogi-window foreground   # -> main monitor, focused
+scripts/mabinogi-window status       # which monitor is it on?
 ```
 
 ## Setup
