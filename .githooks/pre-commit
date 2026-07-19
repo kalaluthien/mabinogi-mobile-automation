@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# pre-commit — fail the commit if the committed zsh completion has drifted from
+# the script's subcommand table. The script (scripts/mabinogi-window) is the
+# single source of truth; completions/_mabinogi-window is generated from it.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+script="scripts/mabinogi-window"
+completion="completions/_mabinogi-window"
+
+# Nothing to check if neither file is part of this commit.
+git diff --cached --name-only | grep -qx -e "$script" -e "$completion" || exit 0
+
+if ! diff -u "$completion" <("./$script" __complete); then
+  echo "ERROR: $completion is out of sync with $script." >&2
+  echo "  Regenerate and stage it:" >&2
+  echo "    ./$script __complete >| $completion && git add $completion" >&2
+  exit 1
+fi

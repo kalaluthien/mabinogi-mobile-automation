@@ -80,6 +80,25 @@ What it does:
 If it warns that the target directory is not on `$fpath`, add the line it prints
 to your `~/.zshrc` (before `compinit` runs) and re-run.
 
+## Editing subcommands
+
+`scripts/mabinogi-window` is the single source of truth. Its `SUBCOMMANDS` table
+drives dispatch **and** the completion — `completions/_mabinogi-window` is
+generated from it, not hand-written. After changing the table, regenerate:
+
+```sh
+scripts/mabinogi-window __complete >| completions/_mabinogi-window
+```
+
+Enable the guard once per clone so a stale completion can never be committed:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+`.githooks/pre-commit` regenerates the completion and fails the commit if it
+differs from what is staged — no drift, no magic.
+
 In Claude Code, `.claude/CLAUDE.md` routes window requests ("where is mabinogi",
 "park it", "bring it back", "show mabinogi") straight to this script and
 describes the report-then-flip behaviour. See it for the agent-facing signals and

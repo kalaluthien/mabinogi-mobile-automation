@@ -251,10 +251,70 @@ do_screenshot() {
   echo "captured Mabinogi window (id ${wid}, currently ${loc}) -> ${out} (opened in Preview)"
 }
 
-case "$action" in
-  status|st)          do_status ;;
-  screenshot|shot|ss) do_screenshot ;;
-  foreground|fg)      move_to foreground ;;
-  background|bg)      move_to background ;;
-  *)                  usage ;;
+# --- Dispatch ------------------------------------------------------------------
+
+# Subcommand table — the single source of truth for the accepted names, their
+# aliases, and their one-line descriptions. Dispatch (below) and shell completion
+# (`__complete`, consumed by completions/_mabinogi-window) both derive from this,
+# so the completion can never drift out of sync with what the script accepts.
+# Each row: "canonical|space-separated aliases|description".
+SUBCOMMANDS=(
+  "status|st|report which monitor the window is on"
+  "screenshot|shot ss|capture just the game window, open in Preview"
+  "foreground|fg|move to the main monitor and focus it"
+  "background|bg|park it on the virtual monitor (no focus)"
+)
+
+# Resolve a user-typed action to its canonical name on stdout (exit 1 if unknown).
+resolve_action() {
+  local want="$1" row canonical aliases
+  for row in "${SUBCOMMANDS[@]}"; do
+    IFS='|' read -r canonical aliases _ <<<"$row"
+    if [[ "$want" == "$canonical" || " $aliases " == *" $want "* ]]; then
+      echo "$canonical"; return 0
+    fi
+  done
+  return 1
+}
+
+# Render the full zsh completion file from SUBCOMMANDS (the single source of
+# truth), emitting one candidate per accepted name — canonical and each alias.
+# The committed completions/_mabinogi-window is exactly this output; a pre-commit
+# hook regenerates and diffs to block drift. Hidden command, not shown in usage.
+render_completion() {
+  local row canonical aliases desc a
+  cat <<'HEADER'
+#compdef mabinogi-window scripts/mabinogi-window
+
+# GENERATED from scripts/mabinogi-window — do not edit by hand.
+# Regenerate: scripts/mabinogi-window __complete > completions/_mabinogi-window
+# The .githooks/pre-commit hook fails the commit if this drifts from the script.
+_mabinogi-window() {
+  (( CURRENT == 2 )) || return 0   # only the first argument takes a subcommand
+
+  local -a subcommands
+  subcommands=(
+HEADER
+  for row in "${SUBCOMMANDS[@]}"; do
+    IFS='|' read -r canonical aliases desc <<<"$row"
+    echo "    '$canonical:$desc'"
+    for a in $aliases; do echo "    '$a:alias for $canonical'"; done
+  done
+  cat <<'FOOTER'
+  )
+  _describe -t subcommands 'subcommand' subcommands
+}
+
+_mabinogi-window "$@"
+FOOTER
+}
+
+[[ "$action" == "__complete" ]] && { render_completion; exit 0; }
+
+case "$(resolve_action "$action" || true)" in
+  status)     do_status ;;
+  screenshot) do_screenshot ;;
+  foreground) move_to foreground ;;
+  background) move_to background ;;
+  *)          usage ;;
 esac

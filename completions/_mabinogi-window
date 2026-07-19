@@ -1,7 +1,8 @@
 #compdef mabinogi-window scripts/mabinogi-window
 
-# Completion for scripts/mabinogi-window.
-# One argument only: the subcommand. Canonical names first, aliases marked.
+# GENERATED from scripts/mabinogi-window — do not edit by hand.
+# Regenerate: scripts/mabinogi-window __complete > completions/_mabinogi-window
+# The .githooks/pre-commit hook fails the commit if this drifts from the script.
 _mabinogi-window() {
   (( CURRENT == 2 )) || return 0   # only the first argument takes a subcommand
 
