@@ -1,107 +1,123 @@
 # mabinogi-mobile-automation
 
-Park the **마비노기 모바일** (Mabinogi Mobile) window on a BetterDisplay virtual
-monitor when idle, and pull it back to the main monitor to play — one command
-each way.
+**마비노기 모바일**(Mabinogi Mobile) 창을 평소에는 BetterDisplay 가상 모니터에
+"주차"해 화면 밖에서 계속 돌아가게 하고, 플레이할 때만 메인 모니터로 불러옵니다.
+양방향 모두 명령 한 줄이면 됩니다.
+
+> **왜 쓰나요?** 게임은 켜 두되(자동 채집·대기 등) 메인 모니터는 비워 두고 싶을
+> 때가 있습니다. 이 도구는 창을 눈에 보이지 않는 가상 모니터로 옮겨 두었다가,
+> 필요할 때 다시 메인 모니터로 가져옵니다. 게임을 끄거나 최소화하지 않으므로
+> 백그라운드 작업이 그대로 유지됩니다.
+
+## 명령 한눈에 보기
+
+| 명령 | 별칭 | 하는 일 |
+| --- | --- | --- |
+| `status` | `st` | 지금 창이 어느 모니터에 있는지 알려줍니다 |
+| `screenshot` | `shot`, `ss` | 게임 창만 캡처해 미리보기로 엽니다 (이동·포커스 없음) |
+| `foreground` | `fg` | 메인 모니터로 가져오고 포커스합니다 |
+| `background` | `bg` | 가상 모니터로 보내 화면 밖에서 계속 실행합니다 |
 
 ```sh
-# Read the state
-scripts/mobinogi-window status       # (st)        which monitor is it on?
-scripts/mobinogi-window screenshot   # (shot, ss)  capture just the game window, open in Preview (no move)
-
-# Set the desired state (idempotent)
-scripts/mobinogi-window foreground   # (fg)        -> main monitor, focused
-scripts/mobinogi-window background   # (bg)        -> virtual monitor (keep running off-screen)
+scripts/mobinogi-window status       # 어느 모니터에 있나?
+scripts/mobinogi-window screenshot   # 게임 창만 캡처
+scripts/mobinogi-window foreground   # 메인 모니터로 (플레이)
+scripts/mobinogi-window background   # 가상 모니터로 (주차)
 ```
 
-There is no `toggle`: to flip, read the state, then set the opposite.
+모든 명령은 **멱등**합니다 — 이미 원하는 상태면 아무 일도 하지 않습니다. 그래서
+`toggle`이 따로 없습니다. 상태를 뒤집고 싶으면 `status`로 확인한 뒤 반대 명령을
+실행하세요.
 
-## Setup
+## 설치
 
-### 1. Create the BetterDisplay virtual screen
+처음 한 번만 설정하면 됩니다. **1~3단계는 필수**, 4단계는 선택입니다.
 
-Install [BetterDisplay](https://github.com/waydabber/BetterDisplay), then add a
-virtual screen and configure it as below.
+### 1. BetterDisplay 가상 화면 만들기
 
-![BetterDisplay virtual screen configuration](docs/images/betterdisplay-virtual-screen.png)
+[BetterDisplay](https://github.com/waydabber/BetterDisplay)를 설치한 뒤, 가상
+화면(virtual screen)을 하나 추가하고 아래처럼 설정합니다.
 
-- **Connect this virtual screen** — on. (Can be toggled on demand any time.)
-- **Virtual screen name** — `Virtual 16:9` (any name; used only for
-  identification).
-- **Aspect ratio** — `16 x 9`, so the parked window keeps the game's shape.
-- Leave *Enable resolutions over 8K*, *Use custom resolution list*, and *Rotated
-  orientation* **off** — the defaults are fine and 8K+ virtual screens can cause
-  stability issues.
+![BetterDisplay 가상 화면 설정](docs/images/betterdisplay-virtual-screen.png)
 
-### 2. Arrange it as a secondary display
+- **Connect this virtual screen** — 켜기. (언제든 껐다 켤 수 있습니다.)
+- **Virtual screen name** — `Virtual 16:9`. (이름은 자유이며 식별용입니다.)
+- **Aspect ratio** — `16 x 9`. 주차된 창이 게임 화면 비율을 유지합니다.
+- *Enable resolutions over 8K*, *Use custom resolution list*, *Rotated
+  orientation* 은 **끄기**. 기본값이면 충분하고, 8K 이상 가상 화면은 안정성
+  문제를 일으킬 수 있습니다.
 
-In **System Settings → Displays → Arrange…**, place `Virtual 16:9` to the
-**right** of the main display (do *not* mirror). This is the off-screen parking
-spot; the script reads live geometry, so the exact position only needs to be a
-separate, non-mirrored secondary — it does not have to be pixel-exact.
+### 2. 보조 디스플레이로 배치
 
-![macOS Arrange Displays with Virtual 16:9 to the right](docs/images/macos-arrange-displays.png)
+**시스템 설정 → 디스플레이 → 정렬…**(System Settings → Displays → Arrange…)에서
+`Virtual 16:9`를 메인 디스플레이의 **오른쪽**에 놓습니다. **미러링하지 마세요.**
+여기가 화면 밖 주차 공간입니다. 스크립트가 디스플레이 위치를 실시간으로 읽으므로,
+정확한 좌표는 필요 없고 "미러링되지 않은 별도의 보조 화면"이기만 하면 됩니다.
 
-### 3. Grant Accessibility to your terminal
+![macOS 디스플레이 정렬 — Virtual 16:9를 오른쪽에 배치](docs/images/macos-arrange-displays.png)
 
-**System Settings → Privacy & Security → Accessibility → enable iTerm2** (and
-Terminal, if you use it). Required for the script to move another app's window;
-without it you get a clear error (`assistive access` / error `-1719`).
+### 3. 터미널에 '손쉬운 사용' 권한 부여
 
-Mabinogi Mobile runs as an iOS-app wrapper (process `ProductName`, bundle
-`com.nexon.devcat.mm`). The script reads live display geometry via CoreGraphics,
-so it adapts when you rearrange or rescale monitors.
+**시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**(System Settings → Privacy &
+Security → Accessibility)에서 **iTerm2를 켜 주세요** (Terminal을 쓴다면 그것도).
+다른 앱의 창을 옮기려면 이 권한이 필요합니다. 없으면 실행 시 명확한 오류가
+납니다 (`assistive access` / 오류 `-1719`).
 
-### 4. (Optional) Enable zsh tab-completion
+> 마비노기 모바일은 iOS 앱 래퍼로 실행됩니다 (프로세스 `ProductName`, 번들
+> `com.nexon.devcat.mm`). 스크립트는 CoreGraphics로 디스플레이 배치를 실시간으로
+> 읽으므로, 모니터를 다시 배치하거나 배율을 바꿔도 알아서 맞춥니다.
 
-Run the installer to complete subcommands (`status`, `screenshot`, `foreground`,
-`background`, and their aliases) after the command:
+### 4. (선택) zsh 자동완성
+
+명령 뒤에 하위 명령(`status`, `screenshot`, `foreground`, `background`와 별칭)이
+탭으로 완성되게 하려면 설치 스크립트를 실행합니다.
 
 ```sh
 scripts/install-completion
-exec zsh          # or open a new terminal
+exec zsh          # 또는 새 터미널 열기
 ```
 
 ```sh
 scripts/mobinogi-window <TAB>   # -> status  st  screenshot  shot  ss  foreground  fg  background  bg
 ```
 
-What it does:
+설치 스크립트가 하는 일:
 
-- Symlinks `completions/_mobinogi-window` into `~/.local/share/zsh/site-functions/`
-  (a directory zsh loads completion functions from). The repo stays the source of
-  truth; re-running just refreshes the link.
-- Clears the cached `compdump` so the next shell rescans and registers the new
-  completion. This matters because `compinit` only picks up new completions when
-  its cache is stale — [prezto](https://github.com/sorin-ionescu/prezto), for
-  example, reuses a dump under `~/.cache/prezto/` for 20 hours and otherwise
-  never rescans. The installer clears both the prezto and plain-zsh caches.
+- `completions/_mobinogi-window`를 `~/.local/share/zsh/site-functions/`(zsh가
+  자동완성 함수를 읽는 디렉터리)에 심볼릭 링크로 연결합니다. 저장소가 원본이며,
+  다시 실행하면 링크만 새로 고칩니다.
+- 캐시된 `compdump`를 지워 다음 셸이 새 자동완성을 다시 읽게 합니다. `compinit`은
+  캐시가 오래됐을 때만 새 자동완성을 인식하기 때문입니다 —
+  [prezto](https://github.com/sorin-ionescu/prezto)는 `~/.cache/prezto/`의 덤프를
+  20시간 동안 재사용하고 그전에는 다시 읽지 않습니다. 설치 스크립트는 prezto와
+  기본 zsh 캐시를 모두 지웁니다.
 
-If it warns that the target directory is not on `$fpath`, add the line it prints
-to your `~/.zshrc` (before `compinit` runs) and re-run.
+대상 디렉터리가 `$fpath`에 없다는 경고가 나오면, 스크립트가 알려 주는 줄을
+`~/.zshrc`(`compinit` 실행 전)에 추가하고 다시 실행하세요.
 
-## Editing subcommands
+## 하위 명령 편집 (개발자용)
 
-`scripts/mobinogi-window` is the single source of truth. Its `SUBCOMMANDS` table
-drives dispatch **and** the completion — `completions/_mobinogi-window` is
-generated from it, not hand-written. After changing the table, regenerate:
+`scripts/mobinogi-window`가 **유일한 원본**입니다. 이 파일의 `SUBCOMMANDS` 표가
+명령 처리(dispatch)와 자동완성을 **모두** 만듭니다 —
+`completions/_mobinogi-window`는 손으로 쓰는 파일이 아니라 여기서 **생성된**
+결과물입니다. 표를 바꾼 뒤에는 다시 생성하세요.
 
 ```sh
 scripts/mobinogi-window __complete >| completions/_mobinogi-window
 ```
 
-Enable the guard once per clone so a stale completion can never be committed
-(needs [pre-commit](https://pre-commit.com): `brew install pre-commit`):
+오래된 자동완성이 실수로 커밋되지 않도록, 클론마다 한 번 가드를 켜 둡니다
+([pre-commit](https://pre-commit.com) 필요: `brew install pre-commit`).
 
 ```sh
 pre-commit install
 ```
 
-The `mabinogi-completion-sync` hook (`.pre-commit-config.yaml` →
-`scripts/check-completion-sync`) regenerates the completion and fails the commit
-if it differs from what is staged — no drift, no magic.
+`mabinogi-completion-sync` 훅(`.pre-commit-config.yaml` →
+`scripts/check-completion-sync`)이 자동완성을 다시 생성해 스테이징된 내용과
+비교하고, 다르면 커밋을 실패시킵니다 — 어긋남 없음, 마법 없음.
 
-In Claude Code, `.claude/CLAUDE.md` routes window requests ("where is mabinogi",
-"park it", "bring it back", "show mabinogi") straight to this script and
-describes the report-then-flip behaviour. See it for the agent-facing signals and
-the full mechanism.
+Claude Code에서는 `.claude/CLAUDE.md`가 창 관련 요청("마비노기 어디 있어",
+"저리 치워", "다시 가져와", "마비노기 보여줘")을 이 스크립트로 곧장 연결하고,
+"상태 보고 후 이동 제안"(report-then-flip) 동작을 설명합니다. 에이전트용 신호와
+전체 동작 방식은 그 문서를 참고하세요.
