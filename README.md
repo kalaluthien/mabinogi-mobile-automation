@@ -9,6 +9,7 @@ scripts/mabinogi-window status       # which monitor is it on?
 scripts/mabinogi-window foreground   # -> main monitor, focused
 scripts/mabinogi-window background   # -> virtual monitor (keep running off-screen)
 scripts/mabinogi-window toggle       # flip to the other monitor
+scripts/mabinogi-window screenshot   # capture just the game window, open in Preview (no move)
 ```
 
 ## Setup
@@ -47,6 +48,7 @@ Mabinogi Mobile runs as an iOS-app wrapper (process `ProductName`, bundle
 `com.nexon.devcat.mm`). The script reads live display geometry via CoreGraphics,
 so it adapts when you rearrange or rescale monitors.
 
-In Claude Code, the `positioning-mabinogi-window` skill wraps this: it reports
-status, then asks whether to flip to the other monitor or leave it. See
-`.claude/CLAUDE.md` for the agent-facing signals and the full mechanism.
+In Claude Code, `.claude/CLAUDE.md` routes window requests ("where is mabinogi",
+"park it", "bring it back", "show mabinogi") straight to this script and
+describes the report-then-flip behaviour. See it for the agent-facing signals and
+the full mechanism.

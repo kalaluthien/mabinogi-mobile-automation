@@ -4,29 +4,32 @@ Move the **마비노기 모바일** (Mabinogi Mobile) window between the physica
 monitor and a BetterDisplay virtual monitor on this Mac, so the game keeps
 running off-screen when not in use.
 
+## When the user talks about the window — run `scripts/mabinogi-window`
+
 Anything the user says about where the window sits ("마비노기 status /
 background / foreground", "where is mabinogi", "move / park / bring back
-mabinogi") routes to the one `positioning-mabinogi-window` skill under
-`.claude/skills/`. That skill has two modes, chosen by whether it gets an
-argument naming the desired state:
+mabinogi", "show / check mabinogi") is served by the self-contained
+`scripts/mabinogi-window` script. Pick the subcommand from the request:
 
-- **`foreground` / `background` argument** (aliases `fg` / `bg`,
-  case-insensitive) → move directly to that state, no question
-  (`positioning-mabinogi-window background` parks it, `... foreground` brings it
-  back).
-- **No argument** → **report-then-flip**:
+- **Wants a specific state** ("park it" / background, "bring it back" / foreground)
+  → run `scripts/mabinogi-window background` or `... foreground` directly, no
+  question. Moves are idempotent — a no-op (beyond re-focusing for foreground)
+  when the window is already there.
+- **Wants to see it without moving it** ("show / check mabinogi") → run
+  `scripts/mabinogi-window screenshot`: captures just the game window (by window
+  id — no desktop) and opens the PNG in Preview, without moving or focusing it.
+  Works even while the window is parked off-screen.
+- **Asks vaguely where it is / whether to move it** → **report-then-flip**:
   1. `scripts/mabinogi-window status` — report which monitor the window is on.
   2. `AskUserQuestion` — offer to flip to the *other* monitor (option labelled
      from the current location) or leave it unchanged.
   3. On "flip", `scripts/mabinogi-window toggle`; on "leave", nothing.
 
-Direct, non-interactive subcommands still exist for scripting: `status`,
-`foreground` (main, focused), `background` (virtual, no focus), `toggle` (flip
-based on current location), `screenshot` (capture the monitor the window is on,
-open in Preview, without moving it). The moves are idempotent — `foreground` /
-`background` are no-ops (beyond re-focusing for foreground) when the window is
-already on the target monitor. This file holds the environment, prerequisites,
-and mechanism the skill relies on.
+Full subcommand list: `status`, `foreground` (main, focused), `background`
+(virtual, no focus), `toggle` (flip based on current location), `screenshot`
+(capture just the game window, open in Preview, no move). Aliases: `fg`, `bg`,
+`st`, `tg`, `shot` / `ss`. The rest of this file holds the environment,
+prerequisites, and mechanism the script relies on.
 
 ## Environment (verify before relying on it — displays/IDs change on reconnect)
 
