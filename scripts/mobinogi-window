@@ -171,7 +171,9 @@ APPLESCRIPT
 )"
   rc=$?
   set -e
-  [[ $rc -ne 0 ]] && fail_osascript "$out"
+  # `if`, not `[[ ]] && …`: as the function's last statement a false test would
+  # leak exit 1, and under `set -e` that aborts the caller before its no-op echo.
+  if [[ $rc -ne 0 ]]; then fail_osascript "$out"; fi
 }
 
 # Move the window to a named location: "foreground" (main, focused) or
