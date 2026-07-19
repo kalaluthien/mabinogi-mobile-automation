@@ -1,0 +1,23 @@
+#compdef mabinogi-window scripts/mabinogi-window
+
+# Completion for scripts/mabinogi-window.
+# One argument only: the subcommand. Canonical names first, aliases marked.
+_mabinogi-window() {
+  (( CURRENT == 2 )) || return 0   # only the first argument takes a subcommand
+
+  local -a subcommands
+  subcommands=(
+    'status:report which monitor the window is on'
+    'st:alias for status'
+    'screenshot:capture just the game window, open in Preview'
+    'shot:alias for screenshot'
+    'ss:alias for screenshot'
+    'foreground:move to the main monitor and focus it'
+    'fg:alias for foreground'
+    'background:park it on the virtual monitor (no focus)'
+    'bg:alias for background'
+  )
+  _describe -t subcommands 'subcommand' subcommands
+}
+
+_mabinogi-window "$@"

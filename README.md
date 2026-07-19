@@ -52,6 +52,34 @@ Mabinogi Mobile runs as an iOS-app wrapper (process `ProductName`, bundle
 `com.nexon.devcat.mm`). The script reads live display geometry via CoreGraphics,
 so it adapts when you rearrange or rescale monitors.
 
+### 4. (Optional) Enable zsh tab-completion
+
+Run the installer to complete subcommands (`status`, `screenshot`, `foreground`,
+`background`, and their aliases) after the command:
+
+```sh
+scripts/install-completion
+exec zsh          # or open a new terminal
+```
+
+```sh
+scripts/mabinogi-window <TAB>   # -> status  st  screenshot  shot  ss  foreground  fg  background  bg
+```
+
+What it does:
+
+- Symlinks `completions/_mabinogi-window` into `~/.local/share/zsh/site-functions/`
+  (a directory zsh loads completion functions from). The repo stays the source of
+  truth; re-running just refreshes the link.
+- Clears the cached `compdump` so the next shell rescans and registers the new
+  completion. This matters because `compinit` only picks up new completions when
+  its cache is stale — [prezto](https://github.com/sorin-ionescu/prezto), for
+  example, reuses a dump under `~/.cache/prezto/` for 20 hours and otherwise
+  never rescans. The installer clears both the prezto and plain-zsh caches.
+
+If it warns that the target directory is not on `$fpath`, add the line it prints
+to your `~/.zshrc` (before `compinit` runs) and re-run.
+
 In Claude Code, `.claude/CLAUDE.md` routes window requests ("where is mabinogi",
 "park it", "bring it back", "show mabinogi") straight to this script and
 describes the report-then-flip behaviour. See it for the agent-facing signals and
