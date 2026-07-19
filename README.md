@@ -39,10 +39,16 @@ scripts/mobinogi-window background   # 가상 모니터로 (주차)
 
 처음 한 번만 설정하면 됩니다. 1~3단계는 필수, 4단계는 선택입니다.
 
-### 1. BetterDisplay 가상 화면 만들기
+### 1. BetterDisplay 설치와 가상 화면 만들기
 
-[BetterDisplay](https://github.com/waydabber/BetterDisplay)를 설치한 뒤, 가상
-화면을 하나 추가하고 아래처럼 설정합니다.
+[BetterDisplay](https://github.com/waydabber/BetterDisplay)를 설치합니다. 둘 중
+편한 쪽을 쓰세요.
+
+- Homebrew: `brew install --cask betterdisplay`
+- 직접 내려받기: [릴리스 페이지](https://github.com/waydabber/BetterDisplay/releases)에서
+  앱을 받아 `/Applications`에 넣습니다.
+
+설치한 뒤 가상 화면을 하나 추가하고 아래처럼 설정합니다.
 
 ![BetterDisplay 가상 화면 설정](docs/images/betterdisplay-virtual-screen.png)
 
