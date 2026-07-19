@@ -4,10 +4,20 @@ Move the **마비노기 모바일** (Mabinogi Mobile) window between the physica
 monitor and a BetterDisplay virtual monitor on this Mac, so the game keeps
 running off-screen when not in use.
 
-The user-facing actions ("마비노기 background / foreground / status") are the
-`background`, `foreground`, and `status` skills under `.claude/skills/`; each
-runs the matching `scripts/mabinogi-window` subcommand. This file holds the
-environment, prerequisites, and mechanism those skills rely on.
+Anything the user says about where the window sits ("마비노기 status /
+background / foreground", "where is mabinogi", "move / park / bring back
+mabinogi") routes to the one `positioning-mabinogi-window` skill under
+`.claude/skills/`. That skill is a **report-then-flip** workflow:
+
+1. `scripts/mabinogi-window status` — report which monitor the window is on.
+2. `AskUserQuestion` — offer to flip to the *other* monitor (option labelled from
+   the current location) or leave it unchanged.
+3. On "flip", `scripts/mabinogi-window toggle`; on "leave", nothing.
+
+Direct, non-interactive subcommands still exist for scripting: `status`,
+`foreground` (main, focused), `background` (virtual, no focus), `toggle` (flip
+based on current location). This file holds the environment, prerequisites, and
+mechanism the skill relies on.
 
 ## Environment (verify before relying on it — displays/IDs change on reconnect)
 
@@ -41,6 +51,12 @@ Moving another app's window uses macOS System Events, which requires
 2. Pick the target rectangle (main display, or first secondary for background).
 3. System Events `set position of window` to center the window on that rectangle;
    `set frontmost` only for foreground.
+
+The script is a small state machine over these primitives: `load_window_frame`
+reads the window's position, `locate_center` maps it to `foreground` /
+`background` / `offscreen`, `move_to <location>` performs a move, and `toggle`
+composes read + locate + move to flip to the opposite side. `status` and
+`toggle` are the two the skill calls.
 
 Do not reach for BetterDisplay's CLI to move the window — BetterDisplay manages
 *displays*, not app *windows*. The virtual monitor is BetterDisplay's job; moving
