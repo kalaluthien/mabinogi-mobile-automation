@@ -1,25 +1,25 @@
 #!/usr/bin/env zsh
 #
-# install-completion — enable zsh tab-completion for scripts/mabinogi-window.
+# install-completion — enable zsh tab-completion for scripts/mobinogi-window.
 #
-# Symlinks completions/_mabinogi-window into a user completion directory on
+# Symlinks completions/_mobinogi-window into a user completion directory on
 # $fpath, then clears the cached compdump so the next shell rescans and picks
 # it up. Idempotent: safe to re-run.
 #
 # After running, open a new shell (or `exec zsh`) and try:
-#   scripts/mabinogi-window <TAB>
+#   scripts/mobinogi-window <TAB>
 #
 set -euo pipefail
 
 repo_root="${0:A:h:h}"                       # scripts/install-completion -> repo root
-comp_src="$repo_root/completions/_mabinogi-window"
+comp_src="$repo_root/completions/_mobinogi-window"
 [[ -f "$comp_src" ]] || { print -u2 "ERROR: completion file not found: $comp_src"; exit 1; }
 
 # Conventional user completion directory; zsh loads _* functions from any $fpath entry.
 comp_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions"
 mkdir -p "$comp_dir"
-ln -sf "$comp_src" "$comp_dir/_mabinogi-window"
-print "Linked: $comp_dir/_mabinogi-window -> $comp_src"
+ln -sf "$comp_src" "$comp_dir/_mobinogi-window"
+print "Linked: $comp_dir/_mobinogi-window -> $comp_src"
 
 # Warn if that directory is not on $fpath (zshenv is sourced for this script, so
 # $fpath here reflects the interactive one). Without it, zsh never loads the file.
@@ -34,4 +34,4 @@ fi
 # zsh uses ~/.zcompdump.
 rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/prezto/zcompdump"(N) ~/.zcompdump(N) ~/.zcompdump.zwc(N)
 print "Cleared completion cache."
-print "Done. Run 'exec zsh' (or open a new terminal), then: scripts/mabinogi-window <TAB>"
+print "Done. Run 'exec zsh' (or open a new terminal), then: scripts/mobinogi-window <TAB>"

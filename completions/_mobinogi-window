@@ -1,9 +1,9 @@
-#compdef mabinogi-window scripts/mabinogi-window
+#compdef mobinogi-window scripts/mobinogi-window
 
-# GENERATED from scripts/mabinogi-window — do not edit by hand.
-# Regenerate: scripts/mabinogi-window __complete > completions/_mabinogi-window
-# The .githooks/pre-commit hook fails the commit if this drifts from the script.
-_mabinogi-window() {
+# GENERATED from scripts/mobinogi-window — do not edit by hand.
+# Regenerate: scripts/mobinogi-window __complete > completions/_mobinogi-window
+# The pre-commit hook (mabinogi-completion-sync) fails the commit on any drift.
+_mobinogi-window() {
   (( CURRENT == 2 )) || return 0   # only the first argument takes a subcommand
 
   local -a subcommands
@@ -21,4 +21,4 @@ _mabinogi-window() {
   _describe -t subcommands 'subcommand' subcommands
 }
 
-_mabinogi-window "$@"
+_mobinogi-window "$@"

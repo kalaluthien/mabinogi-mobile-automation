@@ -3,7 +3,7 @@
 Move the **마비노기 모바일** window between the main monitor and a BetterDisplay
 virtual monitor, so the game keeps running off-screen when idle.
 
-## Window requests → `scripts/mabinogi-window`
+## Window requests → `scripts/mobinogi-window`
 
 Anything about where the window sits ("where is mabinogi", "park it", "bring it
 back", "show mabinogi") routes to this self-contained script. Subcommands:
@@ -28,5 +28,5 @@ No `toggle` — commands are reads (`status`, `screenshot`) or set-desired-state
   windows. Moving the window is System Events' job.
 
 Setup and app/display/mechanism details live in `README.md` and the script's own
-header comments — read `scripts/mabinogi-window` before changing it. Display
+header comments — read `scripts/mobinogi-window` before changing it. Display
 IDs/bounds change on reconnect; verify before relying on them.

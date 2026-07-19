@@ -6,12 +6,12 @@ each way.
 
 ```sh
 # Read the state
-scripts/mabinogi-window status       # (st)        which monitor is it on?
-scripts/mabinogi-window screenshot   # (shot, ss)  capture just the game window, open in Preview (no move)
+scripts/mobinogi-window status       # (st)        which monitor is it on?
+scripts/mobinogi-window screenshot   # (shot, ss)  capture just the game window, open in Preview (no move)
 
 # Set the desired state (idempotent)
-scripts/mabinogi-window foreground   # (fg)        -> main monitor, focused
-scripts/mabinogi-window background   # (bg)        -> virtual monitor (keep running off-screen)
+scripts/mobinogi-window foreground   # (fg)        -> main monitor, focused
+scripts/mobinogi-window background   # (bg)        -> virtual monitor (keep running off-screen)
 ```
 
 There is no `toggle`: to flip, read the state, then set the opposite.
@@ -63,12 +63,12 @@ exec zsh          # or open a new terminal
 ```
 
 ```sh
-scripts/mabinogi-window <TAB>   # -> status  st  screenshot  shot  ss  foreground  fg  background  bg
+scripts/mobinogi-window <TAB>   # -> status  st  screenshot  shot  ss  foreground  fg  background  bg
 ```
 
 What it does:
 
-- Symlinks `completions/_mabinogi-window` into `~/.local/share/zsh/site-functions/`
+- Symlinks `completions/_mobinogi-window` into `~/.local/share/zsh/site-functions/`
   (a directory zsh loads completion functions from). The repo stays the source of
   truth; re-running just refreshes the link.
 - Clears the cached `compdump` so the next shell rescans and registers the new
@@ -82,12 +82,12 @@ to your `~/.zshrc` (before `compinit` runs) and re-run.
 
 ## Editing subcommands
 
-`scripts/mabinogi-window` is the single source of truth. Its `SUBCOMMANDS` table
-drives dispatch **and** the completion — `completions/_mabinogi-window` is
+`scripts/mobinogi-window` is the single source of truth. Its `SUBCOMMANDS` table
+drives dispatch **and** the completion — `completions/_mobinogi-window` is
 generated from it, not hand-written. After changing the table, regenerate:
 
 ```sh
-scripts/mabinogi-window __complete >| completions/_mabinogi-window
+scripts/mobinogi-window __complete >| completions/_mobinogi-window
 ```
 
 Enable the guard once per clone so a stale completion can never be committed

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# mabinogi-window — position the 마비노기 모바일 (Mabinogi Mobile) window between the
+# mobinogi-window — position the 마비노기 모바일 (Mabinogi Mobile) window between the
 # main monitor ("foreground") and the BetterDisplay virtual monitor ("background").
 #
 # Two kinds of command: read the state, or set it to a desired state.
 #   Read:
-#     mabinogi-window status       # report which monitor the window is on
-#     mabinogi-window screenshot   # capture just the game window, open in Preview
+#     mobinogi-window status       # report which monitor the window is on
+#     mobinogi-window screenshot   # capture just the game window, open in Preview
 #   Set desired state (idempotent):
-#     mabinogi-window foreground   # move to the main monitor and focus it
-#     mabinogi-window background   # park it on the virtual monitor (no focus)
+#     mobinogi-window foreground   # move to the main monitor and focus it
+#     mobinogi-window background   # park it on the virtual monitor (no focus)
 #
 # The moves are idempotent: foreground/background do nothing (beyond re-focusing
 # for foreground) when the window is already on the target monitor. screenshot
@@ -243,7 +243,7 @@ do_screenshot() {
   wid="$(window_id)" || die "could not find the Mabinogi window."
   [[ -z "$wid" ]] && die "could not find the Mabinogi window."
   local shot_dir out
-  shot_dir="${TMPDIR:-/tmp}/mabinogi-window"
+  shot_dir="${TMPDIR:-/tmp}/mobinogi-window"
   mkdir -p "$shot_dir"
   out="${shot_dir}/mabinogi.png"                     # fixed path: overwritten each run, never accumulates
   screencapture -x -o -l "$wid" "$out" || die "screencapture failed."
@@ -255,7 +255,7 @@ do_screenshot() {
 
 # Subcommand table — the single source of truth for the accepted names, their
 # aliases, and their one-line descriptions. Dispatch (below) and shell completion
-# (`__complete`, consumed by completions/_mabinogi-window) both derive from this,
+# (`__complete`, consumed by completions/_mobinogi-window) both derive from this,
 # so the completion can never drift out of sync with what the script accepts.
 # Each row: "canonical|space-separated aliases|description".
 SUBCOMMANDS=(
@@ -279,17 +279,17 @@ resolve_action() {
 
 # Render the full zsh completion file from SUBCOMMANDS (the single source of
 # truth), emitting one candidate per accepted name — canonical and each alias.
-# The committed completions/_mabinogi-window is exactly this output; a pre-commit
+# The committed completions/_mobinogi-window is exactly this output; a pre-commit
 # hook regenerates and diffs to block drift. Hidden command, not shown in usage.
 render_completion() {
   local row canonical aliases desc a
   cat <<'HEADER'
-#compdef mabinogi-window scripts/mabinogi-window
+#compdef mobinogi-window scripts/mobinogi-window
 
-# GENERATED from scripts/mabinogi-window — do not edit by hand.
-# Regenerate: scripts/mabinogi-window __complete > completions/_mabinogi-window
-# The .githooks/pre-commit hook fails the commit if this drifts from the script.
-_mabinogi-window() {
+# GENERATED from scripts/mobinogi-window — do not edit by hand.
+# Regenerate: scripts/mobinogi-window __complete > completions/_mobinogi-window
+# The pre-commit hook (mabinogi-completion-sync) fails the commit on any drift.
+_mobinogi-window() {
   (( CURRENT == 2 )) || return 0   # only the first argument takes a subcommand
 
   local -a subcommands
@@ -305,7 +305,7 @@ HEADER
   _describe -t subcommands 'subcommand' subcommands
 }
 
-_mabinogi-window "$@"
+_mobinogi-window "$@"
 FOOTER
 }
 

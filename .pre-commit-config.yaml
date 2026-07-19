@@ -1,5 +1,5 @@
 # Enable once per clone:  pre-commit install
-# Keeps completions/_mabinogi-window in sync with scripts/mabinogi-window.
+# Keeps completions/_mobinogi-window in sync with scripts/mobinogi-window.
 repos:
   - repo: local
     hooks:
@@ -8,4 +8,4 @@ repos:
         entry: scripts/check-completion-sync
         language: script
         pass_filenames: false
-        files: '^(scripts/mabinogi-window|completions/_mabinogi-window)$'
+        files: '^(scripts/mobinogi-window|completions/_mobinogi-window)$'
