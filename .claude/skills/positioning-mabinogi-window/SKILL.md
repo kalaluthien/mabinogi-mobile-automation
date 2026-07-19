@@ -1,7 +1,7 @@
 ---
 name: positioning-mabinogi-window
 description: Report which monitor the 마비노기 모바일 (Mabinogi Mobile) window is on, or move it to a desired state. Takes an optional argument — `foreground` (alias `fg`, main monitor, focused) or `background` (alias `bg`, virtual monitor, off-screen) — and moves there directly without asking. With no argument, report status then offer to flip. Use for "마비노기 status / background / foreground", "where is mabinogi", or any request to move, park, or bring back the game window.
-allowed-tools: Bash(scripts/mabinogi-window status), Bash(scripts/mabinogi-window foreground), Bash(scripts/mabinogi-window background), Bash(scripts/mabinogi-window toggle)
+allowed-tools: Bash(scripts/mabinogi-window status), Bash(scripts/mabinogi-window foreground), Bash(scripts/mabinogi-window background), Bash(scripts/mabinogi-window toggle), Bash(scripts/mabinogi-window screenshot)
 ---
 
 # Positioning the Mabinogi Mobile window
@@ -54,3 +54,12 @@ that error and stop.
    - Move option chosen → run `scripts/mabinogi-window toggle` and report its
      output verbatim.
    - "Leave unchanged" → do nothing further; confirm the window was left where it is.
+
+## Peek without moving — `screenshot`
+
+To *see* the window without disturbing it — including while it is parked on the
+virtual monitor — run `scripts/mabinogi-window screenshot`. It captures whichever
+monitor the window currently sits on and opens the PNG in Preview on the main
+monitor. It never moves or focuses the window, so the game stays exactly where it
+is. Use this for "show me / check mabinogi" when the user does not want it brought
+to the foreground.

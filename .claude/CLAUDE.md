@@ -22,8 +22,11 @@ argument naming the desired state:
 
 Direct, non-interactive subcommands still exist for scripting: `status`,
 `foreground` (main, focused), `background` (virtual, no focus), `toggle` (flip
-based on current location). This file holds the environment, prerequisites, and
-mechanism the skill relies on.
+based on current location), `screenshot` (capture the monitor the window is on,
+open in Preview, without moving it). The moves are idempotent — `foreground` /
+`background` are no-ops (beyond re-focusing for foreground) when the window is
+already on the target monitor. This file holds the environment, prerequisites,
+and mechanism the skill relies on.
 
 ## Environment (verify before relying on it — displays/IDs change on reconnect)
 

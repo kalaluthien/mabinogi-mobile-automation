@@ -8,6 +8,11 @@
 #   mabinogi-window foreground   # move to the main monitor and focus it
 #   mabinogi-window background   # park it on the virtual monitor (no focus)
 #   mabinogi-window toggle       # flip to the other monitor based on current location
+#   mabinogi-window screenshot   # capture the monitor the window is on, open in Preview (no move)
+#
+# The moves are idempotent: foreground/background do nothing (beyond re-focusing
+# for foreground) when the window is already on the target monitor. screenshot
+# never moves or focuses the window.
 #
 # Requires: Accessibility permission for the app that runs this (iTerm2 / Terminal).
 #   System Settings > Privacy & Security > Accessibility > enable your terminal.
@@ -143,10 +148,41 @@ APPLESCRIPT
   echo "$out"
 }
 
+# Raise the app without moving its window (idempotent: frontmost=true twice is
+# the same as once).
+focus_window() {
+  local out rc
+  set +e
+  out="$(osascript - "$APP_PROCESS_NAME" <<'APPLESCRIPT' 2>&1
+on run argv
+  set procName to item 1 of argv
+  tell application "System Events"
+    if not (exists process procName) then error "Mabinogi is not running (process " & procName & " not found)."
+    set frontmost of (first process whose name is procName) to true
+  end tell
+end run
+APPLESCRIPT
+)"
+  rc=$?
+  set -e
+  [[ $rc -ne 0 ]] && fail_osascript "$out"
+}
+
 # Move the window to a named location: "foreground" (main, focused) or
-# "background" (virtual, unfocused).
+# "background" (virtual, unfocused). Idempotent: if the window is already on the
+# target monitor, do not move it — only re-assert focus for foreground.
 move_to() {
   local target="$1" x y w h
+  load_window_frame
+  if [[ "$(window_location)" == "$target" ]]; then
+    if [[ "$target" == "foreground" ]]; then
+      focus_window
+      echo "already on main monitor (foreground) at (${FRAME_PX},${FRAME_PY}); focused, no move"
+    else
+      echo "already on virtual monitor (background) at (${FRAME_PX},${FRAME_PY}); no move"
+    fi
+    return
+  fi
   if [[ "$target" == "foreground" ]]; then
     read -r x y w h <<<"$(pick_display main)"
     move_window "$x" "$y" "$w" "$h" focus
@@ -170,6 +206,27 @@ do_status() {
   echo "Mabinogi window at (${FRAME_PX},${FRAME_PY}) size ${FRAME_W}x${FRAME_H} -> ${label}"
 }
 
+# Capture the monitor the window currently sits on and open it in Preview.
+# Read-only: never moves or focuses the window. Uses region capture (-R) keyed to
+# the live display bounds, so it works for the off-screen virtual monitor too.
+do_screenshot() {
+  load_window_frame
+  local loc x y w h
+  loc="$(window_location)"
+  case "$loc" in
+    foreground) read -r x y w h <<<"$(pick_display main)" ;;
+    background) read -r x y w h <<<"$(pick_display virtual)" ;;
+    *)          die "window is off-screen/unknown; move it to a monitor first." ;;
+  esac
+  local shot_dir out
+  shot_dir="${TMPDIR:-/tmp}/mabinogi-window"
+  mkdir -p "$shot_dir"
+  out="${shot_dir}/${loc}.png"                       # fixed path per location: overwritten, never accumulates
+  screencapture -x -R"${x},${y},${w},${h}" "$out" || die "screencapture failed."
+  open "$out"
+  echo "captured ${loc} monitor (${x},${y} ${w}x${h}) -> ${out} (opened in Preview)"
+}
+
 # Flip the window to the other monitor based on where it is now.
 do_toggle() {
   load_window_frame
@@ -184,9 +241,10 @@ do_toggle() {
 }
 
 case "$action" in
-  status|st)     do_status ;;
-  foreground|fg) move_to foreground ;;
-  background|bg) move_to background ;;
-  toggle|tg)     do_toggle ;;
-  *)             usage ;;
+  status|st)        do_status ;;
+  foreground|fg)    move_to foreground ;;
+  background|bg)    move_to background ;;
+  toggle|tg)        do_toggle ;;
+  screenshot|shot|ss) do_screenshot ;;
+  *)                usage ;;
 esac
