@@ -3,12 +3,13 @@
 # mabinogi-window — position the 마비노기 모바일 (Mabinogi Mobile) window between the
 # main monitor ("foreground") and the BetterDisplay virtual monitor ("background").
 #
-# Usage:
-#   mabinogi-window status       # report which monitor the window is on
-#   mabinogi-window foreground   # move to the main monitor and focus it
-#   mabinogi-window background   # park it on the virtual monitor (no focus)
-#   mabinogi-window toggle       # flip to the other monitor based on current location
-#   mabinogi-window screenshot   # capture just the game window, open in Preview (no move)
+# Two kinds of command: read the state, or set it to a desired state.
+#   Read:
+#     mabinogi-window status       # report which monitor the window is on
+#     mabinogi-window screenshot   # capture just the game window, open in Preview
+#   Set desired state (idempotent):
+#     mabinogi-window foreground   # move to the main monitor and focus it
+#     mabinogi-window background   # park it on the virtual monitor (no focus)
 #
 # The moves are idempotent: foreground/background do nothing (beyond re-focusing
 # for foreground) when the window is already on the target monitor. screenshot
@@ -250,24 +251,10 @@ do_screenshot() {
   echo "captured Mabinogi window (id ${wid}, currently ${loc}) -> ${out} (opened in Preview)"
 }
 
-# Flip the window to the other monitor based on where it is now.
-do_toggle() {
-  load_window_frame
-  local loc
-  loc="$(window_location)"
-  case "$loc" in
-    foreground) move_to background ;;
-    background) move_to foreground ;;
-    *)          echo "Window is off-screen/unknown; bringing it to the foreground." >&2
-                move_to foreground ;;
-  esac
-}
-
 case "$action" in
-  status|st)        do_status ;;
-  foreground|fg)    move_to foreground ;;
-  background|bg)    move_to background ;;
-  toggle|tg)        do_toggle ;;
+  status|st)          do_status ;;
   screenshot|shot|ss) do_screenshot ;;
-  *)                usage ;;
+  foreground|fg)      move_to foreground ;;
+  background|bg)      move_to background ;;
+  *)                  usage ;;
 esac

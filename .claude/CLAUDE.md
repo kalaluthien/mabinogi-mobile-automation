@@ -21,15 +21,21 @@ mabinogi", "show / check mabinogi") is served by the self-contained
   Works even while the window is parked off-screen.
 - **Asks vaguely where it is / whether to move it** → **report-then-flip**:
   1. `scripts/mabinogi-window status` — report which monitor the window is on.
-  2. `AskUserQuestion` — offer to flip to the *other* monitor (option labelled
+  2. `AskUserQuestion` — offer to move to the *other* monitor (option labelled
      from the current location) or leave it unchanged.
-  3. On "flip", `scripts/mabinogi-window toggle`; on "leave", nothing.
+  3. On "move", run the opposite desired state — `scripts/mabinogi-window
+     foreground` if it is on the virtual monitor, `... background` if on the
+     main monitor; on "leave", nothing.
 
-Full subcommand list: `status`, `foreground` (main, focused), `background`
-(virtual, no focus), `toggle` (flip based on current location), `screenshot`
-(capture just the game window, open in Preview, no move). Aliases: `fg`, `bg`,
-`st`, `tg`, `shot` / `ss`. The rest of this file holds the environment,
-prerequisites, and mechanism the script relies on.
+The script has no `toggle`: every command is either a **read** (`status`,
+`screenshot`) or a **set-desired-state** (`foreground`, `background`). To flip,
+read the state, then set the opposite — never an imperative flip.
+
+Full subcommand list: `status` (which monitor), `screenshot` (capture just the
+game window, open in Preview, no move), `foreground` (main, focused),
+`background` (virtual, no focus). Aliases: `st`, `shot` / `ss`, `fg`, `bg`. The
+rest of this file holds the environment, prerequisites, and mechanism the script
+relies on.
 
 ## Environment (verify before relying on it — displays/IDs change on reconnect)
 
@@ -66,9 +72,10 @@ Moving another app's window uses macOS System Events, which requires
 
 The script is a small state machine over these primitives: `load_window_frame`
 reads the window's position, `locate_center` maps it to `foreground` /
-`background` / `offscreen`, `move_to <location>` performs a move, and `toggle`
-composes read + locate + move to flip to the opposite side. `status` and
-`toggle` are the two the skill calls.
+`background` / `offscreen`, and `move_to <location>` sets the window to a desired
+state (idempotent — a no-op when already there). `screenshot` composes
+`window_id` + `screencapture -l` to grab just the app window. There is no flip
+primitive: callers read with `status`, then set the opposite with `move_to`.
 
 Do not reach for BetterDisplay's CLI to move the window — BetterDisplay manages
 *displays*, not app *windows*. The virtual monitor is BetterDisplay's job; moving

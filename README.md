@@ -5,12 +5,16 @@ monitor when idle, and pull it back to the main monitor to play — one command
 each way.
 
 ```sh
-scripts/mabinogi-window status       # which monitor is it on?
-scripts/mabinogi-window foreground   # -> main monitor, focused
-scripts/mabinogi-window background   # -> virtual monitor (keep running off-screen)
-scripts/mabinogi-window toggle       # flip to the other monitor
-scripts/mabinogi-window screenshot   # capture just the game window, open in Preview (no move)
+# Read the state
+scripts/mabinogi-window status       # (st)        which monitor is it on?
+scripts/mabinogi-window screenshot   # (shot, ss)  capture just the game window, open in Preview (no move)
+
+# Set the desired state (idempotent)
+scripts/mabinogi-window foreground   # (fg)        -> main monitor, focused
+scripts/mabinogi-window background   # (bg)        -> virtual monitor (keep running off-screen)
 ```
+
+There is no `toggle`: to flip, read the state, then set the opposite.
 
 ## Setup
 
