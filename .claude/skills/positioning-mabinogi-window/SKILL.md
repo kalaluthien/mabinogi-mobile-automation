@@ -1,6 +1,6 @@
 ---
 name: positioning-mabinogi-window
-description: Report which monitor the 마비노기 모바일 (Mabinogi Mobile) window is on, or move it to a desired state. Takes an optional argument — `foreground` (main monitor, focused) or `background` (virtual monitor, off-screen) — and moves there directly without asking. With no argument, report status then offer to flip. Use for "마비노기 status / background / foreground", "where is mabinogi", or any request to move, park, or bring back the game window.
+description: Report which monitor the 마비노기 모바일 (Mabinogi Mobile) window is on, or move it to a desired state. Takes an optional argument — `foreground` (alias `fg`, main monitor, focused) or `background` (alias `bg`, virtual monitor, off-screen) — and moves there directly without asking. With no argument, report status then offer to flip. Use for "마비노기 status / background / foreground", "where is mabinogi", or any request to move, park, or bring back the game window.
 allowed-tools: Bash(scripts/mabinogi-window status), Bash(scripts/mabinogi-window foreground), Bash(scripts/mabinogi-window background), Bash(scripts/mabinogi-window toggle)
 ---
 
@@ -17,14 +17,14 @@ The skill has two modes, chosen by whether an argument is given:
 
 ## Mode A — argument given (desired state)
 
-The argument names the desired end state:
+The argument names the desired end state (aliases accepted, case-insensitive):
 
-- `foreground` → run `scripts/mabinogi-window foreground`
-- `background` → run `scripts/mabinogi-window background`
+- `foreground` or `fg` → run `scripts/mabinogi-window foreground`
+- `background` or `bg` → run `scripts/mabinogi-window background`
 
 Run the matching subcommand and report its output verbatim. **Do not call
 `AskUserQuestion`.** If the argument is anything else, tell the user the valid
-values are `foreground` and `background`, and stop.
+values are `foreground` (`fg`) and `background` (`bg`), and stop.
 
 If the command errors (game not running, or Accessibility not granted), surface
 that error and stop.

@@ -10,9 +10,10 @@ mabinogi") routes to the one `positioning-mabinogi-window` skill under
 `.claude/skills/`. That skill has two modes, chosen by whether it gets an
 argument naming the desired state:
 
-- **`foreground` / `background` argument** → move directly to that state, no
-  question (`positioning-mabinogi-window background` parks it, `... foreground`
-  brings it back).
+- **`foreground` / `background` argument** (aliases `fg` / `bg`,
+  case-insensitive) → move directly to that state, no question
+  (`positioning-mabinogi-window background` parks it, `... foreground` brings it
+  back).
 - **No argument** → **report-then-flip**:
   1. `scripts/mabinogi-window status` — report which monitor the window is on.
   2. `AskUserQuestion` — offer to flip to the *other* monitor (option labelled
