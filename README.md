@@ -20,13 +20,21 @@ Mac에서 도는 iPad·iPhone 앱은 iPhone과 같은 실행 규칙을 따릅니
 
 | 명령 | 별칭 | 하는 일 |
 | --- | --- | --- |
-| `status` | `st` | 지금 창이 어느 모니터에 있는지 알려줍니다 |
+| `status` | `st` | 앱이 켜졌는지 꺼졌는지, 켜졌다면 창이 어느 모니터에 있는지 알려줍니다 |
 | `screenshot` | `shot`, `ss` | 게임 창만 캡처해 미리보기로 엽니다 (이동·포커스 없음) |
+| `on` | | 앱을 켭니다. 꺼져 있으면 메인 모니터로 실행합니다 |
+| `off` | | 앱을 끕니다 (종료) |
 | `foreground` | `fg` | 메인 모니터로 가져오고 포커스합니다 |
 | `background` | `bg` | 가상 모니터로 보내 화면 밖에서 계속 실행합니다 |
 
+`on`과 `off`는 앱의 전원 스위치입니다. `on`은 앱이 꺼져 있을 때만 메인 모니터로
+실행하며, 이미 켜져 있으면 창을 건드리지 않습니다. 창을 옮기려면 `foreground`나
+`background`를 쓰세요.
+
 ```sh
-scripts/mobinogi-window status       # 어느 모니터에 있나?
+scripts/mobinogi-window status       # 켜짐/꺼짐, 어느 모니터에 있나?
+scripts/mobinogi-window on           # 앱 켜기 (필요하면 메인 모니터로 실행)
+scripts/mobinogi-window off          # 앱 끄기 (종료)
 scripts/mobinogi-window screenshot   # 게임 창만 캡처
 scripts/mobinogi-window foreground   # 메인 모니터로 (플레이)
 scripts/mobinogi-window background   # 가상 모니터로 (주차)
@@ -81,8 +89,8 @@ access` 또는 오류 `-1719`).
 
 ### 4. (선택) zsh 자동완성
 
-명령 뒤에 하위 명령(`status`, `screenshot`, `foreground`, `background`와 별칭)이
-탭으로 완성되게 하려면 설치 스크립트를 실행합니다.
+명령 뒤에 하위 명령(`status`, `screenshot`, `on`, `off`, `foreground`,
+`background`와 별칭)이 탭으로 완성되게 하려면 설치 스크립트를 실행합니다.
 
 ```sh
 scripts/install-completion
@@ -90,7 +98,7 @@ exec zsh          # 또는 새 터미널 열기
 ```
 
 ```sh
-scripts/mobinogi-window <TAB>   # -> status  st  screenshot  shot  ss  foreground  fg  background  bg
+scripts/mobinogi-window <TAB>   # -> status  st  screenshot  shot  ss  on  off  foreground  fg  background  bg
 ```
 
 설치 스크립트가 하는 일:

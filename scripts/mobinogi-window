@@ -5,11 +5,20 @@
 #
 # Two kinds of command: read the state, or set it to a desired state.
 #   Read:
-#     mobinogi-window status       # report which monitor the window is on
+#     mobinogi-window status       # report on/off, and if on, which monitor
 #     mobinogi-window screenshot   # capture just the game window, open in Preview
 #   Set desired state (idempotent):
+#     mobinogi-window on           # ensure the app is running (launch to main if not)
+#     mobinogi-window off          # quit the app
 #     mobinogi-window foreground   # move to the main monitor and focus it
 #     mobinogi-window background   # park it on the virtual monitor (no focus)
+#
+# on/off are the app's power switch, foreground/background move a running window.
+# on launches the app onto the main monitor only when it is NOT already running;
+# if it is already running, on leaves the window where it is (no move, no focus).
+# off quits the app. Both are idempotent: on is a no-op when already running, off
+# a no-op when already stopped. Because "off" is a real state, a stopped app is
+# NOT an error — status reports it as "off" and exits 0.
 #
 # The moves are idempotent: foreground/background do nothing (beyond re-focusing
 # for foreground) when the window is already on the target monitor. screenshot
@@ -87,6 +96,49 @@ locate_center() {
     fi
   done < <(display_bounds)
   echo "$loc"
+}
+
+# --- App process (lifecycle) --------------------------------------------------
+
+# PID of the running app, matched by bundle id via lsappinfo. Empty when the app
+# is not running (its "off" state) — callers treat empty as off, never an error.
+app_pid() {
+  lsappinfo info -only pid "$APP_BUNDLE_ID" 2>/dev/null \
+    | sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p'
+}
+
+# True while the running app owns at least one window. Used to wait out the gap
+# between launch and the window appearing. Non-fatal: a missing process is just
+# "no window yet", not an error.
+has_window() {
+  local out rc
+  set +e
+  out="$(osascript - "$APP_BUNDLE_ID" <<'APPLESCRIPT' 2>&1
+on run argv
+  set bundleID to item 1 of argv
+  tell application "System Events"
+    if not (exists (first process whose bundle identifier is bundleID)) then return "0"
+    set p to first process whose bundle identifier is bundleID
+    if (count of windows of p) is 0 then return "0"
+    return "1"
+  end tell
+end run
+APPLESCRIPT
+)"
+  rc=$?
+  set -e
+  [[ $rc -eq 0 && "$out" == "1" ]]
+}
+
+# Wait up to ~30s for a freshly launched app to put up its window. Returns 1 on
+# timeout so the caller can report a clear failure instead of moving a ghost.
+wait_for_window() {
+  local i
+  for i in $(seq 1 60); do
+    has_window && return 0
+    sleep 0.5
+  done
+  return 1
 }
 
 # --- Window state (System Events) ---------------------------------------------
@@ -201,8 +253,13 @@ move_to() {
   fi
 }
 
-# Report which monitor the window currently sits on.
+# Report whether the app is on (running) or off, and if on, which monitor its
+# window sits on. A stopped app is "off" — a real state, not an error (exit 0).
 do_status() {
+  if [[ -z "$(app_pid)" ]]; then
+    echo "Mabinogi is off (not running)"
+    return
+  fi
   load_window_frame
   local loc label
   loc="$(window_location)"
@@ -211,7 +268,36 @@ do_status() {
     background) label="virtual monitor (background)" ;;
     *)          label="off-screen / unknown" ;;
   esac
-  echo "Mabinogi window at (${FRAME_PX},${FRAME_PY}) size ${FRAME_W}x${FRAME_H} -> ${label}"
+  echo "Mabinogi is on at (${FRAME_PX},${FRAME_PY}) size ${FRAME_W}x${FRAME_H} -> ${label}"
+}
+
+# Turn the app on: if it is not running, launch it and move it onto the main
+# monitor (focused). If it is already running, leave the window untouched — on is
+# only a power switch, not a "bring to front". Idempotent either way.
+do_on() {
+  local pid
+  pid="$(app_pid)"
+  if [[ -n "$pid" ]]; then
+    echo "Mabinogi is already on (running, pid ${pid}); no move"
+    return
+  fi
+  open -b "$APP_BUNDLE_ID" || die "could not launch ${APP_LABEL} (bundle ${APP_BUNDLE_ID})."
+  wait_for_window || die "${APP_LABEL} launched but no window appeared within 30s."
+  move_to foreground
+}
+
+# Turn the app off: quit it with a graceful SIGTERM. Idempotent: a no-op when the
+# app is already stopped. SIGTERM (kill's default) lets the app terminate itself,
+# which needs no Automation permission — unlike an Apple Events "quit".
+do_off() {
+  local pid
+  pid="$(app_pid)"
+  if [[ -z "$pid" ]]; then
+    echo "Mabinogi is already off (not running); no-op"
+    return
+  fi
+  kill "$pid" 2>/dev/null || die "could not quit ${APP_LABEL} (pid ${pid})."
+  echo "quit ${APP_LABEL} (pid ${pid})"
 }
 
 # CGWindowID of the app's main window (largest layer-0 window it owns). Matched by
@@ -220,7 +306,7 @@ do_status() {
 # via lsappinfo, keeping the same stable key used everywhere else. Empty on miss.
 window_id() {
   local pid
-  pid="$(lsappinfo info -only pid "$APP_BUNDLE_ID" 2>/dev/null | sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p')"
+  pid="$(app_pid)"
   [[ -z "$pid" ]] && return 1
   swift - "$pid" <<'SWIFT'
 import CoreGraphics
@@ -266,8 +352,10 @@ do_screenshot() {
 # so the completion can never drift out of sync with what the script accepts.
 # Each row: "canonical|space-separated aliases|description".
 SUBCOMMANDS=(
-  "status|st|report which monitor the window is on"
+  "status|st|report on/off, and if on, which monitor the window is on"
   "screenshot|shot ss|capture just the game window, open in Preview"
+  "on||turn the app on (launch to the main monitor if not running)"
+  "off||turn the app off (quit)"
   "foreground|fg|move to the main monitor and focus it"
   "background|bg|park it on the virtual monitor (no focus)"
 )
@@ -321,6 +409,8 @@ FOOTER
 case "$(resolve_action "$action" || true)" in
   status)     do_status ;;
   screenshot) do_screenshot ;;
+  on)         do_on ;;
+  off)        do_off ;;
   foreground) move_to foreground ;;
   background) move_to background ;;
   *)          usage ;;
